@@ -1,0 +1,93 @@
+//Corey Stradford
+//Due In class Wednesday March 11 2015
+//Server Program Project. Principles of Networking
+
+
+//Import necessary IO and Network methods
+import java.net.*;
+import java.io.*;
+
+public class Socket_Server_Project {
+
+	public static void main (String args []) throws Exception{
+			//Create File input stream in order to open a link to read the requested file
+		 	FileInputStream FinStream;
+		 	//Create Output stream to write file contents to socket
+		 	OutputStream OutStream = null;
+		 	//Create New Socket to accept connections on a specified port
+		 	Socket Socket = null;
+		 	//Create a buffered input stream in order to read from the requested file
+		 	BufferedInputStream BinStream = null;
+		 	//Create a new server socket to wait for a request and bind it on a specific socket
+		 	ServerSocket SrvrSckt = new ServerSocket(1090);
+		 	
+		    try {
+		      while (true) {
+		    	  // Display that the created server is ready for a new connection
+		        System.out.println("Waiting for a Connection...");
+		        try {
+		          //Have the socket Listen and accept connections on the specified server socket 
+		          Socket = SrvrSckt.accept();
+		          //Print the details of a connection, when a new connections is accepted
+		          System.out.println("Accepted a New Connection, Connection Details : " + Socket);
+		          //Create new input stream to allow reading from the accepted socket connection
+		          InputStream ScktInput= Socket.getInputStream();
+		          //Create new data input stream in order to read the data in the inputstream from the connection
+		          DataInputStream DataInput = new DataInputStream(ScktInput);
+		          //Set a timeout on the socket incase a file request is not sent.
+		          Socket.setSoTimeout(1000);
+		          //Read the input data from the inputstream and assign it as the file request
+		          String FileRequest = DataInput.readLine();
+		          //Truncate the read data to only include the file request and assign it to a variable
+		          String RequestedFile = FileRequest.substring(5,FileRequest.length()-9);
+		          //Display which file the connection is requesting
+		          System.out.println("This is the file requested by the Accepted Connection: "+FileRequest.substring(5,FileRequest.length()-9));
+		          //Create a file based on the requested file
+		          System.out.println("Requested file: "+RequestedFile);
+		          File Reply = new File (RequestedFile);
+		          	//Only Send the file back through the connection if the file exist
+			          if(Reply.exists()){
+			        	  //Create a new byte array with length of the reply in order to send it back through connection
+				          byte [] mybytearray  = new byte [(int) Reply.length()];
+				          //Set the file inputstream to create a stream connection of the requested file
+				          FinStream = new FileInputStream(Reply);
+				          //Set the buffered input stream to read the bytes of the requested file
+				          BinStream = new BufferedInputStream(FinStream);
+				          //Read from the requested file starting from the begining until the end of the file and assign to the byte array
+				          BinStream.read(mybytearray,0,mybytearray.length);
+				          //Assigning a socket output stream so that the file can be written to the screen through the socket
+				          OutStream = Socket.getOutputStream();
+				          //Display that the file is going to be sent
+				          System.out.println("Sending Requested file");
+				          //Write the contents of the byte array which contains the file contents, through the socket back to the requestor 
+				          OutStream.write(mybytearray,0,mybytearray.length);
+				          //Clear out the output stream
+				          OutStream.flush();
+				          //Display that the file as been sent
+				          System.out.println("Done.");
+				          // Close the streams and the connection
+				          BinStream.close();
+			        	  OutStream.close();
+					      Socket.close();
+				      }
+			          //Display error message to requester if the requested resource does not exist.
+			          else{
+			        	  System.out.println("The Requested file was not found, sending error to Accepted Connection");
+			        	  PrintWriter ScktOut = new PrintWriter(Socket.getOutputStream(),true);
+			        	  String message = "404 Error File not Found";
+			        	  ScktOut.println(message);
+			        	  Socket.close();
+			          	  }
+		        		}
+		        //Exception Catch
+		        catch(IOException e){
+		        	e.printStackTrace();
+	        			}
+	      			}
+		    	} 
+		    	//At the end of everything close the serversocket
+		    	finally {
+		    		SrvrSckt.close();
+		        	}
+	}
+}
